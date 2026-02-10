@@ -1,0 +1,73 @@
+{
+  "repo_name": "streaming-asr-conformer-librispeech",
+  "title": "Noise-Robust Streaming ASR with Chunkwise Conformer-CTC on LibriSpeech (with MUSAN+RIR Augmentation)",
+  "one_liner": "Build a production-grade, streaming-capable ASR system and quantify how chunking, SpecAugment, and real noise/reverb augmentation trade off WER vs latency/RTF.",
+  "research_question": "For English read speech, how much accuracy is lost when moving from full-context Conformer-CTC to streaming chunkwise Conformer-CTC, and can targeted augmentation (MUSAN noise + RIR convolution) and SpecAugment recover WER without violating real-time constraints?",
+  "dataset": {
+    "name": "LibriSpeech ASR (train-clean-100 + dev/test splits) with MUSAN + OpenSLR RIR/noise for augmentation",
+    "urls": [
+      "https://www.openslr.org/resources/12/train-clean-100.tar.gz",
+      "https://www.openslr.org/resources/12/dev-clean.tar.gz",
+      "https://www.openslr.org/resources/12/dev-other.tar.gz",
+      "https://www.openslr.org/resources/12/test-clean.tar.gz",
+      "https://www.openslr.org/resources/12/test-other.tar.gz",
+      "https://www.openslr.org/resources/17/musan.tar.gz",
+      "https://www.openslr.org/resources/28/rirs_noises.zip"
+    ],
+    "license": "LibriSpeech: CC BY 4.0; MUSAN and RIRs/noises: see OpenSLR terms (research-use; attribution recommended).",
+    "approx_size_gb": 13.0,
+    "ingestion_notes": "Downloader should fetch from OpenSLR URLs with resume support, verify file sizes, extract to a fixed data root, and build manifest JSONL (audio_path, duration_s, text, speaker_id, split). Training data uses LibriSpeech train-clean-100; evaluation uses the official dev/test splits. Augmentation is on-the-fly: random MUSAN noise mix at sampled SNR + optional RIR convolution; keep a deterministic eval mode and an optional 'noisy test' created by fixed-seed augmentation of test-clean/test-other."
+  },
+  "method": {
+    "model": "PyTorch Conformer encoder + CTC head trained with dynamic chunk training (fixed chunk size with limited left context; optional context carryover); streaming inference via chunked encoder forward + greedy/beam CTC decoding; optional n-gram LM rescoring for non-streaming and streaming (beam) variants.",
+    "baseline": "DeepSpeech2-style conv front-end + BiLSTM encoder + CTC (full-context), greedy decoding; same tokenizer (character or BPE) and same data pipeline.",
+    "ablations": [
+      "Streaming constraint: full-context Conformer-CTC vs chunkwise Conformer-CTC at multiple chunk sizes (e.g., 0.32s, 0.64s, 1.28s) with matched params.",
+      "Augmentation: (a) none, (b) SpecAugment only, (c) MUSAN+RIR only, (d) SpecAugment + MUSAN+RIR.",
+      "Decoding: greedy vs beam search; with vs without n-gram LM rescoring (report added latency/RTF)."
+    ],
+    "metrics": [
+      "WER on test-clean and test-other (primary)",
+      "WER on fixed-seed augmented 'noisy test' variants (robustness)",
+      "RTF (real-time factor) and average end-to-end latency under streaming settings (chunk size dependent)",
+      "Throughput (utterances/sec) and peak GPU memory",
+      "95% bootstrap confidence intervals for WER deltas vs baseline; paired significance test on per-utterance WER where applicable"
+    ]
+  },
+  "compute": {
+    "gpus": "2x NVIDIA GeForce RTX 3090 (24GB each)",
+    "expected_hours": 22
+  },
+  "risks": [
+    "Download and extraction time can dominate if bandwidth is limited; implement resumable downloads and caching.",
+    "Streaming Conformer training can be unstable without careful learning-rate schedules and gradient clipping.",
+    "CTC beam+LM may reduce WER but increase latency; must report both WER and RTF/latency to avoid misleading gains.",
+    "Augmentation can hurt clean-set WER if SNR/RIR sampling is too aggressive; tune with dev-clean/dev-other.",
+    "Reproducibility requires fixed seeds, pinned package versions, deterministic eval, and logged manifests/checkpoints."
+  ],
+  "execution_steps": [
+    "Create a Python environment (Python 3.10+), install PyTorch with CUDA, torchaudio, sentencepiece (if BPE), and experiment tooling (Hydra/W&B-or-CSV logging).",
+    "Run a single command to download/extract LibriSpeech train-clean-100 + dev/test splits, MUSAN, and RIRs/noises from the URLs; build JSONL manifests and compute durations.",
+    "Train the baseline DeepSpeech2-CTC on train-clean-100; select best checkpoint by dev-other WER; evaluate on test-clean/test-other; log WER/RTF.",
+    "Train the main Conformer-CTC (full-context) with the same tokenizer; evaluate and log.",
+    "Enable chunkwise training/inference and run the streaming ablation across chunk sizes; evaluate WER/RTF/latency.",
+    "Run augmentation ablations (none vs SpecAugment vs MUSAN+RIR vs both) under the best-performing chunk setting; evaluate clean and noisy test variants.",
+    "Run decoding ablation (greedy vs beam, with/without LM) and report the WER vs RTF/latency trade-off curves.",
+    "Generate a final report (tables + plots) summarizing: (a) WER deltas with confidence intervals, (b) latency/RTF curves vs chunk size, (c) robustness gains on noisy tests, (d) ablation conclusions and recommended production configuration."
+  ],
+  "generated_at_utc": "2026-02-10 16:08:40 UTC",
+  "hardware": {
+    "cpu_cores": 24,
+    "cpu_threads": 48,
+    "ram_gb": 251.59,
+    "gpu_count": 2,
+    "gpu_names": [
+      "NVIDIA GeForce RTX 3090",
+      "NVIDIA GeForce RTX 3090"
+    ],
+    "gpu_vram_gb": [
+      24.0,
+      24.0
+    ]
+  }
+}

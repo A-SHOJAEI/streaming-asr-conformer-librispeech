@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streaming-asr-conformer-librispeech"
+version = "0.1.0"
+description = "Noise-robust streaming ASR with chunkwise Conformer-CTC on LibriSpeech (baseline: DeepSpeech2-CTC)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

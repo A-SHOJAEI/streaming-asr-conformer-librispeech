@@ -1,0 +1,34 @@
+Implemented a standalone repo in `/home/alireza/research-autopilot/generated_projects/streaming-asr-conformer-librispeech` based on `_autopilot/project_plan.json`, including:
+
+- Data pipeline
+  - `streaming_asr.cli.data`: synthetic smoke dataset generator (default), plus OpenSLR LibriSpeech/MUSAN/RIR downloader with resumable downloads and checksum verification when available (scrapes MD5 from OpenSLR pages).
+  - Manifest builder outputs JSONL with `audio_path,duration_s,text,speaker_id,split`.
+
+- Models + experiments (as in plan)
+  - Baseline: DeepSpeech2-style Conv + BiLSTM + CTC (`src/streaming_asr/models/deepspeech2.py`).
+  - Main: Conformer + CTC full-context and chunkwise (streaming-constrained via chunkwise attention mask) (`src/streaming_asr/models/conformer.py`, `src/streaming_asr/models/chunkwise.py`).
+  - Augmentation hooks: SpecAugment + MUSAN noise + RIR convolution (`src/streaming_asr/augment/*`).
+  - Decoding: greedy + CTC prefix beam search (`src/streaming_asr/decoding/*`).
+
+- Training/eval/report
+  - `make train`: trains all runs listed in the config (smoke trains baseline + full-context Conformer + chunkwise Conformer).
+  - `make eval`: writes `artifacts/results.json` and per-run `runs/.../eval.json`.
+  - `make report`: writes `artifacts/report.md`.
+
+- Reproducibility controls
+  - Global seeds + deterministic flags where appropriate (`src/streaming_asr/utils/repro.py`).
+  - Deterministic fixed-seed “noisy test” mode supported in eval for OpenSLR configs.
+
+- Tooling
+  - `Makefile` targets: `setup data train eval report all`.
+  - `make setup` always uses a repo-local `.venv` and bootstraps pip via `python3 -m venv --without-pip .venv` + `get-pip.py` (PEP 668-safe, does not rely on `ensurepip`).
+  - Pinned deps in `requirements.txt`, editable install via `pyproject.toml`.
+
+Run:
+```bash
+make all
+```
+Default uses `configs/smoke.yaml` (fast, no large downloads). For real experiments:
+```bash
+make all CONFIG=configs/openslr_full.yaml
+```

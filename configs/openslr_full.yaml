@@ -1,0 +1,241 @@
+project:
+  seed: 1337
+  device: cuda
+  deterministic: false
+  run_root: runs
+
+data:
+  kind: openslr
+  root: data
+  downloads_dir: data/downloads
+  extracted_dir: data/extracted
+  manifests_dir: data/manifests
+  openslr:
+    librispeech_splits:
+      - train-clean-100
+      - dev-clean
+      - dev-other
+      - test-clean
+      - test-other
+    include_musan: true
+    include_rirs: true
+
+features:
+  sample_rate: 16000
+  n_mels: 80
+  win_length_ms: 25
+  hop_length_ms: 10
+
+tokenizer:
+  kind: char
+  vocab: " abcdefghijklmnopqrstuvwxyz'"
+
+train:
+  epochs: 20
+  batch_size: 16
+  lr: 0.0008
+  weight_decay: 1.0e-4
+  grad_clip_norm: 5.0
+  amp: true
+  log_every_steps: 50
+  max_steps_per_epoch: null
+
+eval:
+  beam_size: 10
+  noisy_test: true
+  noisy_seed: 2026
+
+artifacts:
+  results_path: artifacts/results.json
+  report_path: artifacts/report.md
+
+experiments:
+  # This config defines the baseline and the full streaming/augmentation/decoding ablation "grid".
+  # You can comment out entries to reduce runtime.
+  runs:
+    - name: baseline_deepspeech2_ctc_greedy
+      model:
+        kind: deepspeech2
+        deepspeech2:
+          n_conv: 2
+          lstm_hidden: 768
+          lstm_layers: 5
+      augmentation:
+        specaugment: false
+        musan_rir: false
+      decoding:
+        kind: greedy
+    - name: conformer_fullcontext_ctc_greedy
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: full
+      augmentation:
+        specaugment: true
+        musan_rir: true
+      decoding:
+        kind: greedy
+    # Streaming constraint ablation: multiple chunk sizes.
+    - name: conformer_chunkwise_0p32s_ctc_greedy
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 0.32
+          left_context_chunks: 4
+      augmentation:
+        specaugment: true
+        musan_rir: true
+      decoding:
+        kind: greedy
+    - name: conformer_chunkwise_0p64s_ctc_greedy
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 0.64
+          left_context_chunks: 4
+      augmentation:
+        specaugment: true
+        musan_rir: true
+      decoding:
+        kind: greedy
+    - name: conformer_chunkwise_1p28s_ctc_greedy
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 1.28
+          left_context_chunks: 4
+      augmentation:
+        specaugment: true
+        musan_rir: true
+      decoding:
+        kind: greedy
+    # Augmentation ablation (example under best chunk setting): none/spec/musan+rir/both.
+    - name: conformer_chunkwise_0p64s_aug_none
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 0.64
+          left_context_chunks: 4
+      augmentation:
+        specaugment: false
+        musan_rir: false
+      decoding:
+        kind: greedy
+    - name: conformer_chunkwise_0p64s_aug_specaugment
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 0.64
+          left_context_chunks: 4
+      augmentation:
+        specaugment: true
+        musan_rir: false
+      decoding:
+        kind: greedy
+    - name: conformer_chunkwise_0p64s_aug_musan_rir
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 0.64
+          left_context_chunks: 4
+      augmentation:
+        specaugment: false
+        musan_rir: true
+      decoding:
+        kind: greedy
+    - name: conformer_chunkwise_0p64s_aug_spec_musan_rir
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 0.64
+          left_context_chunks: 4
+      augmentation:
+        specaugment: true
+        musan_rir: true
+      decoding:
+        kind: greedy
+    # Decoding ablation: greedy vs beam (LM rescoring is optional and requires external setup).
+    - name: conformer_chunkwise_0p64s_beam10
+      model:
+        kind: conformer
+        conformer:
+          d_model: 256
+          n_heads: 4
+          n_layers: 12
+          ff_mult: 4
+          conv_kernel: 31
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 0.64
+          left_context_chunks: 4
+      augmentation:
+        specaugment: true
+        musan_rir: true
+      decoding:
+        kind: beam
+        beam_size: 10
+

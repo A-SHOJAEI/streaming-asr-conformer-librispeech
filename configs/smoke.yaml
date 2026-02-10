@@ -1,0 +1,99 @@
+project:
+  seed: 1337
+  device: cpu
+  deterministic: true
+  run_root: runs
+
+data:
+  kind: synthetic
+  root: data
+  manifests_dir: data/manifests
+  synthetic:
+    train_samples: 64
+    dev_samples: 16
+    test_samples: 16
+    sample_rate: 16000
+    min_sec: 0.3
+    max_sec: 1.0
+    vocab: " abcdefghijklmnopqrstuvwxyz'"
+
+features:
+  sample_rate: 16000
+  n_mels: 40
+  win_length_ms: 25
+  hop_length_ms: 10
+
+tokenizer:
+  kind: char
+  vocab: " abcdefghijklmnopqrstuvwxyz'"
+
+train:
+  epochs: 1
+  batch_size: 8
+  lr: 0.001
+  weight_decay: 0.0
+  grad_clip_norm: 5.0
+  amp: false
+  log_every_steps: 10
+  max_steps_per_epoch: 10
+
+eval:
+  beam_size: 1
+  noisy_test: false
+
+artifacts:
+  results_path: artifacts/results.json
+  report_path: artifacts/report.md
+
+experiments:
+  # Baseline and streaming ablation (fast smoke versions).
+  runs:
+    - name: baseline_deepspeech2_ctc_greedy
+      model:
+        kind: deepspeech2
+        deepspeech2:
+          n_conv: 2
+          lstm_hidden: 128
+          lstm_layers: 2
+      augmentation:
+        specaugment: false
+        musan_rir: false
+      decoding:
+        kind: greedy
+    - name: conformer_fullcontext_ctc_greedy
+      model:
+        kind: conformer
+        conformer:
+          d_model: 128
+          n_heads: 4
+          n_layers: 4
+          ff_mult: 4
+          conv_kernel: 15
+          dropout: 0.1
+        streaming:
+          mode: full
+      augmentation:
+        specaugment: true
+        musan_rir: false
+      decoding:
+        kind: greedy
+    - name: conformer_chunkwise_0p32s_ctc_greedy
+      model:
+        kind: conformer
+        conformer:
+          d_model: 128
+          n_heads: 4
+          n_layers: 4
+          ff_mult: 4
+          conv_kernel: 15
+          dropout: 0.1
+        streaming:
+          mode: chunkwise
+          chunk_size_s: 0.32
+          left_context_chunks: 4
+      augmentation:
+        specaugment: true
+        musan_rir: false
+      decoding:
+        kind: greedy
+

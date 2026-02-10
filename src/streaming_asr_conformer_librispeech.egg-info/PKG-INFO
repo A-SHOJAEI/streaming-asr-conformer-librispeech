@@ -1,0 +1,50 @@
+Metadata-Version: 2.4
+Name: streaming-asr-conformer-librispeech
+Version: 0.1.0
+Summary: Noise-robust streaming ASR with chunkwise Conformer-CTC on LibriSpeech (baseline: DeepSpeech2-CTC).
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Dynamic: license-file
+
+# streaming-asr-conformer-librispeech
+
+Noise-Robust Streaming ASR with Chunkwise Conformer-CTC on LibriSpeech (with MUSAN+RIR Augmentation).
+
+This repository is a standalone, production-oriented research scaffold that implements:
+
+- Data download/extraction for LibriSpeech + MUSAN + RIRs/noises from OpenSLR with resumable downloads and checksum verification when available.
+- A baseline **DeepSpeech2-style Conv + BiLSTM + CTC** model (full-context) with greedy decoding.
+- A **Conformer encoder + CTC** model in both full-context and **chunkwise (streaming-constrained)** modes.
+- On-the-fly augmentation: SpecAugment and MUSAN noise mixing + RIR convolution (train-time), plus deterministic/noisy eval variants.
+- Evaluation that writes machine-readable `artifacts/results.json` and a human report `artifacts/report.md`.
+
+The default `make all` uses a fast synthetic smoke config (no large downloads). For real experiments, switch to `configs/openslr_full.yaml`.
+
+## Quickstart (smoke)
+
+```bash
+make all
+```
+
+Outputs:
+
+- `artifacts/results.json`
+- `artifacts/report.md`
+- `runs/` (checkpoints, logs, per-run eval)
+
+## Real data (OpenSLR)
+
+```bash
+make data CONFIG=configs/openslr_full.yaml
+make train CONFIG=configs/openslr_full.yaml
+make eval  CONFIG=configs/openslr_full.yaml
+make report CONFIG=configs/openslr_full.yaml
+```
+
+Notes:
+
+- Installing `torch`/`torchaudio` with CUDA may require using the official PyTorch install command for your CUDA version.
+- `make setup` always uses a repo-local virtualenv (`.venv`) and never installs into the system Python (PEP 668-safe). It bootstraps pip using `python3 -m venv --without-pip` + `get-pip.py` (does not rely on `ensurepip`).
+
