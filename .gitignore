@@ -19,3 +19,4 @@ artifacts/
 *.ckpt
 *.log
 
+*.egg-info/
