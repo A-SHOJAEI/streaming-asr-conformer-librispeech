@@ -1,0 +1,134 @@
+{
+  "experiment": "streaming-asr-conformer-librispeech",
+  "config": "configs/smoke.yaml",
+  "generated_at_utc": "2026-02-20 06:28:45 UTC",
+  "data": {
+    "kind": "synthetic",
+    "train_samples": 64,
+    "dev_samples": 16,
+    "test_samples": 16,
+    "sample_rate": 16000
+  },
+  "features": {
+    "sample_rate": 16000,
+    "n_mels": 40,
+    "win_length_ms": 25,
+    "hop_length_ms": 10
+  },
+  "training": {
+    "epochs": 1,
+    "batch_size": 8,
+    "lr": 0.001,
+    "max_steps_per_epoch": 10,
+    "device": "cpu"
+  },
+  "runs": {
+    "baseline_deepspeech2_ctc_greedy": {
+      "model": {
+        "kind": "deepspeech2",
+        "n_conv": 2,
+        "lstm_hidden": 128,
+        "lstm_layers": 2
+      },
+      "augmentation": {
+        "specaugment": false,
+        "musan_rir": false
+      },
+      "decoding": "greedy",
+      "streaming": null,
+      "test_metrics": {
+        "wer": 1.0,
+        "num_err": 17,
+        "num_words": 17,
+        "rtf": 0.00236,
+        "total_audio_s": 10.05,
+        "total_time_s": 0.0237,
+        "algorithmic_latency_s": 0.0
+      },
+      "train_loss": 5.5342,
+      "dev_wer": 1.0
+    },
+    "conformer_fullcontext_ctc_greedy": {
+      "model": {
+        "kind": "conformer",
+        "d_model": 128,
+        "n_heads": 4,
+        "n_layers": 4,
+        "ff_mult": 4,
+        "conv_kernel": 15,
+        "dropout": 0.1,
+        "streaming_mode": "full"
+      },
+      "augmentation": {
+        "specaugment": true,
+        "musan_rir": false
+      },
+      "decoding": "greedy",
+      "streaming": {
+        "mode": "full",
+        "chunk_size_s": null,
+        "left_context_chunks": null
+      },
+      "test_metrics": {
+        "wer": 1.0,
+        "num_err": 17,
+        "num_words": 17,
+        "rtf": 0.00257,
+        "total_audio_s": 10.05,
+        "total_time_s": 0.0258,
+        "algorithmic_latency_s": 0.0
+      },
+      "train_loss": 4.2816,
+      "dev_wer": 1.0
+    },
+    "conformer_chunkwise_0p32s_ctc_greedy": {
+      "model": {
+        "kind": "conformer",
+        "d_model": 128,
+        "n_heads": 4,
+        "n_layers": 4,
+        "ff_mult": 4,
+        "conv_kernel": 15,
+        "dropout": 0.1,
+        "streaming_mode": "chunkwise"
+      },
+      "augmentation": {
+        "specaugment": true,
+        "musan_rir": false
+      },
+      "decoding": "greedy",
+      "streaming": {
+        "mode": "chunkwise",
+        "chunk_size_s": 0.32,
+        "left_context_chunks": 4
+      },
+      "test_metrics": {
+        "wer": 1.0,
+        "num_err": 17,
+        "num_words": 17,
+        "rtf": 0.00243,
+        "total_audio_s": 10.05,
+        "total_time_s": 0.0245,
+        "algorithmic_latency_s": 0.32
+      },
+      "train_loss": 4.5025,
+      "dev_wer": 1.0
+    }
+  },
+  "comparisons_vs_baseline": {
+    "conformer_fullcontext_ctc_greedy": {
+      "test": {
+        "paired_utt_wer_delta_mean": 0.0,
+        "paired_utt_wer_delta_ci95": [0.0, 0.0],
+        "n_utts": 16
+      }
+    },
+    "conformer_chunkwise_0p32s_ctc_greedy": {
+      "test": {
+        "paired_utt_wer_delta_mean": 0.0,
+        "paired_utt_wer_delta_ci95": [0.0, 0.0],
+        "n_utts": 16
+      }
+    }
+  }
+}

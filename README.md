@@ -86,7 +86,7 @@ The real grid is defined in `configs/openslr_full.yaml` (LibriSpeech + MUSAN + R
 
 The committed artifacts in this workspace are from the synthetic smoke config:
 
-- Generated at: `2026-02-10 16:27:42 UTC`
+- Generated at: `2026-02-20 06:28:45 UTC`
 - Config: `configs/smoke.yaml`
 - Report: `artifacts/report.md`
 - Machine-readable: `artifacts/results.json`
